@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+.cache/
+outputs/
+logs/
+checkpoints/
+models/*
+!models/roles.json
+.data/
+/data/
+.DS_Store
+**/*.ipynb_checkpoints/
