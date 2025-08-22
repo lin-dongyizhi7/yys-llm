@@ -47,7 +47,7 @@ def format_dataset(dataset_path: str):
         # 将多轮拼接为 SFT 文本，加入少量表情增强风格 😀
         lines = []
         for turn in dialog:
-            speaker = "用户" if turn["from"] == "user" else "助手"
+            speaker = "user" if turn["from"] == "user" else "assistant"
             text = turn["text"].strip()
             if turn["from"] == "assistant":
                 text = text + " 😊"

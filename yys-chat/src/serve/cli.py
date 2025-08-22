@@ -1,12 +1,18 @@
 import argparse
 from typing import List, Tuple
 from pathlib import Path
+import sys
 
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel
 
-from ..utils.roles import list_roles, get_role
+ROOT_DIR = Path(__file__).resolve().parents[2]
+SRC_DIR = ROOT_DIR / "src"
+if str(SRC_DIR) not in sys.path:
+    sys.path.append(str(SRC_DIR))
+
+from utils.roles import list_roles, get_role  # noqa: E402
 
 
 def load_model(role_name: str):

@@ -3,11 +3,13 @@ accelerate==0.33.0
 peft==0.11.1
 trl==0.9.6
 datasets==2.20.0
+# 如使用 QLoRA 需 bitsandbytes；若在 Windows 安装困难，可注释掉并用 --quant none
 bitsandbytes==0.43.1
 sentencepiece==0.2.0
 protobuf==5.27.2
-torch==2.3.1+cu121
---extra-index-url https://download.pytorch.org/whl/cu121
+
+# 默认安装 CPU 版 torch，若有 GPU 可单独按官网指引安装对应 CUDA 版本
+torch==2.3.1
 
 gradio==4.44.0
 uvicorn==0.30.6
