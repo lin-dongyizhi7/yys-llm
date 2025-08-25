@@ -1,0 +1,23 @@
+.sudoku-board {
+  border: 3px solid #333;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #333;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.board-row {
+  display: flex;
+}
+
+.board-row:nth-child(3n) {
+  border-bottom: 3px solid #333;
+}
+
+.board-row:nth-child(3n+1) {
+  border-bottom: 1px solid #ccc;
+}
+
+.board-row:nth-child(3n+2) {
+  border-bottom: 1px solid #ccc;
+}

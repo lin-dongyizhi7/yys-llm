@@ -1,0 +1,160 @@
+.home-page {
+  background: white;
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.title {
+  font-size: 3rem;
+  color: #333;
+  margin-bottom: 40px;
+  font-weight: bold;
+}
+
+.mode-selection h2 {
+  font-size: 1.5rem;
+  color: #666;
+  margin-bottom: 30px;
+}
+
+.mode-buttons {
+  display: flex;
+  gap: 30px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.mode-button {
+  background: white;
+  border: 3px solid #e0e0e0;
+  border-radius: 15px;
+  padding: 30px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 250px;
+  text-align: center;
+}
+
+.mode-button:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+}
+
+.mode-button.manual:hover {
+  border-color: #4CAF50;
+  background: #f8fff8;
+}
+
+.mode-button.generate:hover {
+  border-color: #2196F3;
+  background: #f8fbff;
+}
+
+.mode-button h3 {
+  font-size: 1.5rem;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.mode-button p {
+  color: #666;
+  line-height: 1.5;
+}
+
+/* 难度选择样式 */
+.difficulty-selection h2 {
+  font-size: 1.5rem;
+  color: #666;
+  margin-bottom: 30px;
+}
+
+.difficulty-buttons {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 30px;
+}
+
+.difficulty-button {
+  background: white;
+  border: 3px solid #e0e0e0;
+  border-radius: 15px;
+  padding: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 200px;
+  text-align: center;
+}
+
+.difficulty-button:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+}
+
+.difficulty-button.simple:hover {
+  border-color: #4CAF50;
+  background: #f8fff8;
+}
+
+.difficulty-button.中等:hover {
+  border-color: #2196F3;
+  background: #f8fbff;
+}
+
+.difficulty-button.困难:hover {
+  border-color: #ff9800;
+  background: #fff8f0;
+}
+
+.difficulty-button.专家:hover {
+  border-color: #f44336;
+  background: #fff8f8;
+}
+
+.difficulty-button h3 {
+  font-size: 1.3rem;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.difficulty-button p {
+  color: #666;
+  line-height: 1.4;
+  margin-bottom: 15px;
+  font-size: 0.9rem;
+}
+
+.difficulty-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.8rem;
+}
+
+.cells-info {
+  color: #4CAF50;
+  font-weight: bold;
+}
+
+.empty-info {
+  color: #ff9800;
+  font-weight: bold;
+}
+
+.back-button {
+  background: #f0f0f0;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  color: #333;
+}
+
+.back-button:hover {
+  background: #e0e0e0;
+  transform: translateX(-3px);
+}
