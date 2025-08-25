@@ -2,11 +2,11 @@
  * @Author: 凛冬已至 2985956026@qq.com
  * @Date: 2025-08-25 08:51:24
  * @LastEditors: 凛冬已至 2985956026@qq.com
- * @LastEditTime: 2025-08-25 10:44:12
+ * @LastEditTime: 2025-08-25 14:07:45
  * @FilePath: \my-llm\shudo\src\components\SudokuGame.tsx
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import "./SudokuGame.css";
 import { GameMode } from "../App";
 import { SudokuDifficulty } from "../utils";
@@ -48,8 +48,19 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [gameTime, setGameTime] = useState<number>(0);
   const [isGameActive, setIsGameActive] = useState<boolean>(true);
-  const [initialBoardState, setInitialBoardState] =
-    useState<number[][]>(initialBoard);
+  // 使用useRef创建初始格子标识常量，确保在游戏开始后永不改变
+  const initFlagRef = useRef<number[][]>();
+  
+  // 只在游戏开始时计算一次initFlag，之后永不改变
+  if (!initFlagRef.current) {
+    console.log("🎯 游戏开始，初始化initFlag");
+    initFlagRef.current = initialBoard.map(row => 
+      row.map(cell => cell > 0 ? 1 : 0)
+    );
+  }
+  
+  const initFlag = initFlagRef.current!;
+  
 
   // 调试输出：游戏开始时的信息
   useEffect(() => {
@@ -71,6 +82,26 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
     console.log("   N: 切换笔记模式");
     console.log("   Delete/Backspace: 清除格子");
     console.log("🔧 调试信息已启用，请查看控制台输出");
+    
+    // 显示初始格子标识
+    console.log("🏷️ 初始格子标识 (initFlag):");
+    console.table(initFlag);
+    console.log("   📝 1 = 初始格子，0 = 空格");
+    
+    // 验证initFlag与initialBoard的一致性
+    let isConsistent = true;
+    for (let row = 0; row < 9; row++) {
+      for (let col = 0; col < 9; col++) {
+        const expectedFlag = initialBoard[row][col] > 0 ? 1 : 0;
+        if (initFlag[row][col] !== expectedFlag) {
+          isConsistent = false;
+          console.error(`🚨 不一致: 格子 [${row}, ${col}]`);
+          console.error(`   initialBoard: ${initialBoard[row][col]} -> 期望flag: ${expectedFlag}`);
+          console.error(`   initFlag: ${initFlag[row][col]}`);
+        }
+      }
+    }
+    console.log(`✅ initFlag一致性验证: ${isConsistent ? '通过' : '失败'}`);
   }, [mode, difficulty, initialBoard]);
 
   // 调试输出：定期显示游戏状态
@@ -78,9 +109,7 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
     const interval = setInterval(() => {
       if (isGameActive && gameTime > 0) {
         const filledCells = board.flat().filter((num) => num > 0).length;
-        const initialCells = initialBoardState
-          .flat()
-          .filter((num) => num > 0).length;
+        const initialCells = initFlag.flat().reduce((sum: number, flag: number) => sum + flag, 0);
         const userFilledCells = filledCells - initialCells;
         const emptyCells = 81 - filledCells;
 
@@ -95,7 +124,7 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
     }, 180000); // 每3分钟输出一次状态
 
     return () => clearInterval(interval);
-  }, [isGameActive, gameTime, board, initialBoardState]);
+  }, [isGameActive, gameTime, board]);
 
   // 计算每个数字的剩余个数
   const getNumberCounts = useCallback(() => {
@@ -115,7 +144,7 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
     console.log(`🖱️ 点击格子: [${row}, ${col}]`);
     console.log(`   当前值: ${board[row][col] || "空"}`);
     console.log(
-      `   是否为初始数字: ${initialBoardState[row][col] !== 0 ? "是" : "否"}`
+      `   是否为初始数字: ${initFlag[row][col] === 1 ? "是" : "否"}`
     );
 
     setSelectedCell([row, col]);
@@ -142,7 +171,7 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
     console.log(`🔢 输入数字: ${number} 到格子 [${row}, ${col}]`);
     console.log(`   当前格子值: ${board[row][col] || "空"}`);
     console.log(
-      `   是否为初始数字: ${initialBoardState[row][col] !== 0 ? "是" : "否"}`
+      `   是否为初始数字: ${initFlag[row][col] === 1 ? "是" : "否"}`
     );
     console.log(`   笔记模式: ${isNoteMode ? "开启" : "关闭"}`);
 
@@ -255,11 +284,12 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
   const resetGame = () => {
     console.log("🔄 重置游戏");
     console.log("📋 恢复初始数独面板:");
-    console.table(initialBoardState);
+    console.table(initialBoard);
     console.log("🧹 清空所有笔记");
     console.log("⏱️ 重置计时器");
 
-    setBoard(initialBoardState);
+    // 使用原始initialBoard重置，确保与initFlag一致
+    setBoard([...initialBoard]);
     setNotes(
       Array(9)
         .fill(null)
@@ -273,6 +303,9 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
     setGameTime(0);
 
     console.log("✅ 游戏重置完成");
+    console.log("🔍 验证重置后的状态:");
+    console.log(`   initFlag中的初始格子数量: ${initFlag.flat().reduce((sum: number, flag: number) => sum + flag, 0)}`);
+    console.log(`   当前board中的数字数量: ${board.flat().filter((num) => num > 0).length}`);
   };
 
   // 清除所有笔记
@@ -343,7 +376,8 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
           notes={notes}
           selectedCell={selectedCell}
           highlightedNumber={highlightedNumber}
-          initialBoard={initialBoardState}
+          initialBoard={initialBoard}
+          initFlag={initFlag}
           onCellClick={handleCellClick}
         />
 

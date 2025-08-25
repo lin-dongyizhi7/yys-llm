@@ -50,7 +50,12 @@ const SudokuCell: React.FC<SudokuCellProps> = ({
 
   const renderContent = () => {
     if (value > 0) {
-      return <span className="cell-value">{value}</span>;
+      return (
+        <>
+          <span className="cell-value">{value}</span>
+          {/* <span style={{ color: "red", fontSize: "8px" }}>{getCellClassName()}</span> */}
+        </>
+      );
     } else if (notes.length > 0) {
       return (
         <div className="cell-notes">

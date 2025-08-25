@@ -8,6 +8,7 @@ interface SudokuBoardProps {
   selectedCell: [number, number] | null;
   highlightedNumber: number | null;
   initialBoard: number[][];
+  initFlag: number[][];
   onCellClick: (row: number, col: number) => void;
 }
 
@@ -17,6 +18,7 @@ const SudokuBoard: React.FC<SudokuBoardProps> = ({
   selectedCell,
   highlightedNumber,
   initialBoard,
+  initFlag,
   onCellClick,
 }) => {
   const isHighlighted = (row: number, col: number): boolean => {
@@ -84,21 +86,26 @@ const SudokuBoard: React.FC<SudokuBoardProps> = ({
     <div className="sudoku-board">
       {board.map((row, rowIndex) => (
         <div key={rowIndex} className="board-row">
-          {row.map((cell, colIndex) => (
-            <SudokuCell
-              key={`${rowIndex}-${colIndex}`}
-              value={cell}
-              notes={notes[rowIndex][colIndex]}
-              isSelected={isSelected(rowIndex, colIndex)}
-              isHighlighted={isHighlighted(rowIndex, colIndex)}
-              isInSameRow={isInSameRow(rowIndex, colIndex)}
-              isInSameCol={isInSameCol(rowIndex, colIndex)}
-              isInSameBox={isInSameBox(rowIndex, colIndex)}
-              isInitial={initialBoard[rowIndex][colIndex] !== 0} // 判断是否为初始值
-              isConflict={hasConflict(rowIndex, colIndex)}
-              onClick={() => onCellClick(rowIndex, colIndex)}
-            />
-          ))}
+          {row.map((cell, colIndex) => {
+            // 使用initFlag判断是否为初始格子，确保与SudokuGame中的逻辑一致
+            const isInitialCell = initFlag[rowIndex][colIndex] === 1;
+            
+            return (
+              <SudokuCell
+                key={`${rowIndex}-${colIndex}`}
+                value={cell}
+                notes={notes[rowIndex][colIndex]}
+                isSelected={isSelected(rowIndex, colIndex)}
+                isHighlighted={isHighlighted(rowIndex, colIndex)}
+                isInSameRow={isInSameRow(rowIndex, colIndex)}
+                isInSameCol={isInSameCol(rowIndex, colIndex)}
+                isInSameBox={isInSameBox(rowIndex, colIndex)}
+                isInitial={isInitialCell}
+                isConflict={hasConflict(rowIndex, colIndex)}
+                onClick={() => onCellClick(rowIndex, colIndex)}
+              />
+            );
+          })}
         </div>
       ))}
     </div>
