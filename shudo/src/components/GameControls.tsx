@@ -1,5 +1,5 @@
-import React from 'react';
-import './GameControls.css';
+import React from "react";
+import "./GameControls.css";
 
 interface GameControlsProps {
   isNoteMode: boolean;
@@ -7,8 +7,6 @@ interface GameControlsProps {
   onClearSelection: () => void;
   onResetGame: () => void;
   onClearAllNotes: () => void;
-  onTogglePause: () => void;
-  isPaused: boolean;
 }
 
 const GameControls: React.FC<GameControlsProps> = ({
@@ -17,23 +15,21 @@ const GameControls: React.FC<GameControlsProps> = ({
   onClearSelection,
   onResetGame,
   onClearAllNotes,
-  onTogglePause,
-  isPaused
 }) => {
   return (
     <div className="game-controls">
       <h3>游戏控制</h3>
-      
+
       <button
-        className={`control-button note-mode ${isNoteMode ? 'active' : ''}`}
+        className={`control-button note-mode ${isNoteMode ? "active" : ""}`}
         onClick={onToggleNoteMode}
       >
         <span className="button-icon">✏️</span>
         <span className="button-text">
-          {isNoteMode ? '笔记模式开启' : '笔记模式关闭'}
+          {isNoteMode ? "笔记模式开启" : "笔记模式关闭"}
         </span>
       </button>
-      
+
       <button
         className="control-button clear-selection"
         onClick={onClearSelection}
@@ -41,35 +37,17 @@ const GameControls: React.FC<GameControlsProps> = ({
         <span className="button-icon">🚫</span>
         <span className="button-text">清除选择</span>
       </button>
-      
-      <button
-        className="control-button reset-game"
-        onClick={onResetGame}
-      >
+
+      <button className="control-button reset-game" onClick={onResetGame}>
         <span className="button-icon">🔄</span>
         <span className="button-text">重置游戏</span>
       </button>
-      
-                    <button
-                className="control-button clear-notes"
-                onClick={onClearAllNotes}
-              >
-                <span className="button-icon">🗑️</span>
-                <span className="button-text">清除所有笔记</span>
-              </button>
 
-              <button
-                className={`control-button ${isPaused ? 'resume' : 'pause'}`}
-                onClick={onTogglePause}
-              >
-                <span className="button-icon">
-                  {isPaused ? '▶️' : '⏸️'}
-                </span>
-                <span className="button-text">
-                  {isPaused ? '继续游戏' : '暂停游戏'}
-                </span>
-              </button>
-      
+      <button className="control-button clear-notes" onClick={onClearAllNotes}>
+        <span className="button-icon">🗑️</span>
+        <span className="button-text">清除所有笔记</span>
+      </button>
+
       <div className="keyboard-hints">
         <h4>键盘快捷键</h4>
         <div className="hint-item">

@@ -1,5 +1,5 @@
-import React from 'react';
-import './SudokuCell.css';
+import React from "react";
+import "./SudokuCell.css";
 
 interface SudokuCellProps {
   value: number;
@@ -24,25 +24,25 @@ const SudokuCell: React.FC<SudokuCellProps> = ({
   isInSameBox,
   isInitial,
   isConflict,
-  onClick
+  onClick,
 }) => {
-    const getCellClassName = (): string => {
-    let className = 'sudoku-cell';
+  const getCellClassName = (): string => {
+    let className = "sudoku-cell";
 
     if (isSelected) {
-      className += ' selected';
+      className += " selected";
     } else if (isHighlighted) {
-      className += ' highlighted';
+      className += " highlighted";
     } else if (isInSameRow || isInSameCol || isInSameBox) {
-      className += ' related';
+      className += " related";
     }
 
     if (isInitial) {
-      className += ' initial';
+      className += " initial";
     }
 
     if (isConflict) {
-      className += ' conflict';
+      className += " conflict";
     }
 
     return className;
@@ -50,20 +50,16 @@ const SudokuCell: React.FC<SudokuCellProps> = ({
 
   const renderContent = () => {
     if (value > 0) {
-      return (
-        <span className="cell-value">
-          {value}
-        </span>
-      );
+      return <span className="cell-value">{value}</span>;
     } else if (notes.length > 0) {
       return (
         <div className="cell-notes">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
             <span
               key={num}
-              className={`note-number ${notes.includes(num) ? 'active' : ''}`}
+              className={`note-number ${notes.includes(num) ? "active" : ""}`}
             >
-              {notes.includes(num) ? num : ''}
+              {notes.includes(num) ? num : ""}
             </span>
           ))}
         </div>
@@ -73,10 +69,7 @@ const SudokuCell: React.FC<SudokuCellProps> = ({
   };
 
   return (
-    <div
-      className={getCellClassName()}
-      onClick={onClick}
-    >
+    <div className={getCellClassName()} onClick={onClick}>
       {renderContent()}
     </div>
   );

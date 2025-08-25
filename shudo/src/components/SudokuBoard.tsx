@@ -1,6 +1,6 @@
-import React from 'react';
-import './SudokuBoard.css';
-import SudokuCell from './SudokuCell';
+import React from "react";
+import "./SudokuBoard.css";
+import SudokuCell from "./SudokuCell";
 
 interface SudokuBoardProps {
   board: number[][];
@@ -17,17 +17,21 @@ const SudokuBoard: React.FC<SudokuBoardProps> = ({
   selectedCell,
   highlightedNumber,
   initialBoard,
-  onCellClick
+  onCellClick,
 }) => {
   const isHighlighted = (row: number, col: number): boolean => {
     if (!highlightedNumber) return false;
-    
+
     // 只高亮相同数字的格子
     return board[row][col] === highlightedNumber;
   };
 
   const isSelected = (row: number, col: number): boolean => {
-    return selectedCell !== null && selectedCell[0] === row && selectedCell[1] === col;
+    return (
+      selectedCell !== null &&
+      selectedCell[0] === row &&
+      selectedCell[1] === col
+    );
   };
 
   const isInSameRow = (row: number, col: number): boolean => {
@@ -38,7 +42,7 @@ const SudokuBoard: React.FC<SudokuBoardProps> = ({
     return selectedCell !== null && selectedCell[1] === col;
   };
 
-    const isInSameBox = (row: number, col: number): boolean => {
+  const isInSameBox = (row: number, col: number): boolean => {
     if (!selectedCell) return false;
 
     const selectedBoxRow = Math.floor(selectedCell[0] / 3);
@@ -81,19 +85,19 @@ const SudokuBoard: React.FC<SudokuBoardProps> = ({
       {board.map((row, rowIndex) => (
         <div key={rowIndex} className="board-row">
           {row.map((cell, colIndex) => (
-                                <SudokuCell
-                      key={`${rowIndex}-${colIndex}`}
-                      value={cell}
-                      notes={notes[rowIndex][colIndex]}
-                      isSelected={isSelected(rowIndex, colIndex)}
-                      isHighlighted={isHighlighted(rowIndex, colIndex)}
-                      isInSameRow={isInSameRow(rowIndex, colIndex)}
-                      isInSameCol={isInSameCol(rowIndex, colIndex)}
-                      isInSameBox={isInSameBox(rowIndex, colIndex)}
-                      isInitial={initialBoard[rowIndex][colIndex] !== 0} // 判断是否为初始值
-                      isConflict={hasConflict(rowIndex, colIndex)}
-                      onClick={() => onCellClick(rowIndex, colIndex)}
-                    />
+            <SudokuCell
+              key={`${rowIndex}-${colIndex}`}
+              value={cell}
+              notes={notes[rowIndex][colIndex]}
+              isSelected={isSelected(rowIndex, colIndex)}
+              isHighlighted={isHighlighted(rowIndex, colIndex)}
+              isInSameRow={isInSameRow(rowIndex, colIndex)}
+              isInSameCol={isInSameCol(rowIndex, colIndex)}
+              isInSameBox={isInSameBox(rowIndex, colIndex)}
+              isInitial={initialBoard[rowIndex][colIndex] !== 0} // 判断是否为初始值
+              isConflict={hasConflict(rowIndex, colIndex)}
+              onClick={() => onCellClick(rowIndex, colIndex)}
+            />
           ))}
         </div>
       ))}
