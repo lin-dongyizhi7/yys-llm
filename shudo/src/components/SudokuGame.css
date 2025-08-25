@@ -30,6 +30,60 @@
   transform: translateX(-3px);
 }
 
+.manual-mode-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.import-button {
+  background: #2196F3;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
+}
+
+.import-button:hover {
+  background: #1976D2;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(33, 150, 243, 0.4);
+}
+
+.import-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+}
+
+.finish-creation-button {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+}
+
+.finish-creation-button:hover {
+  background: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(76, 175, 80, 0.4);
+}
+
+.finish-creation-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+}
+
 .game-header h1 {
   font-size: 2.5rem;
   color: #333;
@@ -88,4 +142,18 @@
   font-weight: bold;
   position: absolute;
   left: 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .manual-mode-controls {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .import-button,
+  .finish-creation-button {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+  }
 }

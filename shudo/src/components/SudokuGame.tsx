@@ -10,10 +10,11 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import "./SudokuGame.css";
 import { GameMode } from "../App";
 import { SudokuDifficulty } from "../utils";
-import SudokuBoard from "./SudokuBoard";
-import NumberPad from "./NumberPad";
-import GameControls from "./GameControls";
-import Timer from "./Timer";
+import SudokuBoard from "./game-ui/SudokuBoard";
+import NumberPad from "./game-ui/NumberPad";
+import GameControls from "./game-control/GameControls";
+import Timer from "./game-control/Timer";
+import ImportDialog from "./game-control/ImportDialog";
 
 interface SudokuGameProps {
   mode: GameMode;
@@ -48,6 +49,10 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [gameTime, setGameTime] = useState<number>(0);
   const [isGameActive, setIsGameActive] = useState<boolean>(true);
+  // 新增：手动模式下的游戏状态
+  const [isManualModeActive, setIsManualModeActive] = useState<boolean>(false);
+  // 新增：导入对话框状态
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState<boolean>(false);
   // 使用useRef创建初始格子标识常量，确保在游戏开始后永不改变
   const initFlagRef = useRef<number[][]>();
   
@@ -60,7 +65,6 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
   }
   
   const initFlag = initFlagRef.current!;
-  
 
   // 调试输出：游戏开始时的信息
   useEffect(() => {
@@ -107,7 +111,7 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
   // 调试输出：定期显示游戏状态
   useEffect(() => {
     const interval = setInterval(() => {
-      if (isGameActive && gameTime > 0) {
+      if (isGameActive && gameTime > 0 && isManualModeActive) {
         const filledCells = board.flat().filter((num) => num > 0).length;
         const initialCells = initFlag.flat().reduce((sum: number, flag: number) => sum + flag, 0);
         const userFilledCells = filledCells - initialCells;
@@ -124,7 +128,7 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
     }, 180000); // 每3分钟输出一次状态
 
     return () => clearInterval(interval);
-  }, [isGameActive, gameTime, board]);
+  }, [isGameActive, gameTime, board, isManualModeActive]);
 
   // 计算每个数字的剩余个数
   const getNumberCounts = useCallback(() => {
@@ -141,6 +145,14 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
 
   // 处理格子点击
   const handleCellClick = (row: number, col: number) => {
+    // 在手动模式下，如果游戏还没开始，允许编辑所有格子
+    if (mode === 'manual' && !isManualModeActive) {
+      console.log(`🖱️ 手动模式编辑: 点击格子 [${row}, ${col}]`);
+      setSelectedCell([row, col]);
+      setIsEditing(false);
+      return;
+    }
+
     console.log(`🖱️ 点击格子: [${row}, ${col}]`);
     console.log(`   当前值: ${board[row][col] || "空"}`);
     console.log(
@@ -170,10 +182,65 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
     const [row, col] = selectedCell;
     console.log(`🔢 输入数字: ${number} 到格子 [${row}, ${col}]`);
     console.log(`   当前格子值: ${board[row][col] || "空"}`);
+    
+    // 在手动模式下，如果游戏还没开始，允许编辑所有格子
+    if (mode === 'manual' && !isManualModeActive) {
+      console.log(`   手动模式编辑: 允许编辑所有格子`);
+      if (isNoteMode) {
+        // 笔记模式
+        console.log("📝 笔记模式操作");
+        const newNotes = [...notes];
+        const cellNotes = [...newNotes[row][col]];
+
+        if (cellNotes.includes(number)) {
+          // 如果数字已存在，移除它
+          newNotes[row][col] = cellNotes.filter((n) => n !== number);
+          console.log(`   移除笔记: ${number}`);
+        } else {
+          // 添加新笔记
+          newNotes[row][col] = [...cellNotes, number].sort();
+          console.log(`   添加笔记: ${number}`);
+        }
+
+        setNotes(newNotes);
+        console.log(`   当前笔记: [${newNotes[row][col].join(", ")}]`);
+      } else {
+        // 正常模式
+        if (board[row][col] === number) {
+          // 如果点击相同数字，清除格子
+          console.log(`   清除格子 (点击相同数字)`);
+          const newBoard = [...board];
+          newBoard[row][col] = 0;
+          setBoard(newBoard);
+          setHighlightedNumber(null);
+        } else {
+          // 填入新数字
+          console.log(`   填入新数字`);
+          const newBoard = [...board];
+          newBoard[row][col] = number;
+          setBoard(newBoard);
+          setHighlightedNumber(number);
+
+          // 清除该格子的笔记
+          const newNotes = [...notes];
+          newNotes[row][col] = [];
+          setNotes(newNotes);
+          console.log(`   清除笔记`);
+        }
+      }
+      return;
+    }
+
     console.log(
       `   是否为初始数字: ${initFlag[row][col] === 1 ? "是" : "否"}`
     );
     console.log(`   笔记模式: ${isNoteMode ? "开启" : "关闭"}`);
+
+    // 检查是否为初始数字（不可编辑）
+    if (initFlag[row][col] === 1) {
+      console.log("❌ 不能编辑初始数字");
+      return;
+    }
 
     if (isNoteMode) {
       // 笔记模式
@@ -240,6 +307,28 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
       } else if (key === "Delete" || key === "Backspace") {
         const [row, col] = selectedCell;
         console.log(`   删除键: 清除格子 [${row}, ${col}]`);
+        
+        // 在手动模式下，如果游戏还没开始，允许编辑所有格子
+        if (mode === 'manual' && !isManualModeActive) {
+          const newBoard = [...board];
+          newBoard[row][col] = 0;
+          setBoard(newBoard);
+          setHighlightedNumber(null);
+
+          // 清除笔记
+          const newNotes = [...notes];
+          newNotes[row][col] = [];
+          setNotes(newNotes);
+          console.log(`   格子已清除`);
+          return;
+        }
+
+        // 检查是否为初始数字（不可编辑）
+        if (initFlag[row][col] === 1) {
+          console.log("❌ 不能编辑初始数字");
+          return;
+        }
+
         const newBoard = [...board];
         newBoard[row][col] = 0;
         setBoard(newBoard);
@@ -258,7 +347,7 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
         console.log(`   未识别的按键: ${key}`);
       }
     },
-    [selectedCell, board, notes, isNoteMode]
+    [selectedCell, board, notes, isNoteMode, mode, isManualModeActive, initFlag]
   );
 
   // 监听键盘事件
@@ -301,6 +390,11 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
     );
     clearSelection();
     setGameTime(0);
+    
+    // 重置手动模式状态
+    if (mode === 'manual') {
+      setIsManualModeActive(false);
+    }
 
     console.log("✅ 游戏重置完成");
     console.log("🔍 验证重置后的状态:");
@@ -355,6 +449,65 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
     setIsGameActive(newGameState);
   };
 
+  // 手动模式：完成创建按钮点击处理
+  const handleFinishCreation = () => {
+    console.log("🎯 手动模式：完成创建，开始游戏");
+    console.log("📋 当前数独面板:");
+    console.table(board);
+    
+    // 计算当前填入的数字数量
+    const filledCells = board.flat().filter((num) => num > 0).length;
+    console.log(`   已填入数字: ${filledCells}`);
+    
+    // 更新初始格子标识，将当前所有有数字的格子标记为初始格子
+    const newInitFlag = board.map(row => 
+      row.map(cell => cell > 0 ? 1 : 0)
+    );
+    
+    // 更新ref中的initFlag
+    if (initFlagRef.current) {
+      initFlagRef.current = newInitFlag;
+    }
+    
+    // 激活手动模式游戏
+    setIsManualModeActive(true);
+    
+    console.log("✅ 手动模式游戏已激活");
+    console.log("🔒 当前所有数字已锁定为初始数字");
+  };
+
+  // 处理导入数据
+  const handleImport = (importedBoard: number[][]) => {
+    console.log("📥 导入数独数据");
+    console.log("📋 导入的数独面板:");
+    console.table(importedBoard);
+    
+    // 更新棋盘
+    setBoard([...importedBoard]);
+    
+    // 清空笔记
+    setNotes(
+      Array(9)
+        .fill(null)
+        .map(() =>
+          Array(9)
+            .fill(null)
+            .map(() => [])
+        )
+    );
+    
+    // 清除选择
+    clearSelection();
+    
+    // 如果游戏已经开始，重置为创建阶段
+    if (isManualModeActive) {
+      setIsManualModeActive(false);
+      console.log("🔄 导入后重置为创建阶段");
+    }
+    
+    console.log("✅ 数独数据导入完成");
+  };
+
   return (
     <div className="sudoku-game">
       <div className="game-header">
@@ -362,10 +515,34 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
           ← 返回首页
         </button>
         <h1>数独游戏</h1>
-        <Timer isActive={isGameActive} onTimeUpdate={handleTimeUpdate} />
+        
+        {/* 手动模式下显示完成创建按钮或计时器 */}
+        {mode === "manual" ? (
+          !isManualModeActive ? (
+            <div className="manual-mode-controls">
+              <button 
+                className="import-button"
+                onClick={() => setIsImportDialogOpen(true)}
+              >
+                📁 导入
+              </button>
+              <button 
+                className="finish-creation-button"
+                onClick={handleFinishCreation}
+              >
+                ✅ 完成创建
+              </button>
+            </div>
+          ) : (
+            <Timer isActive={isGameActive} onTimeUpdate={handleTimeUpdate} />
+          )
+        ) : (
+          <Timer isActive={isGameActive} onTimeUpdate={handleTimeUpdate} />
+        )}
+        
         <div className="mode-indicator">
           {mode === "manual"
-            ? "手动模式"
+            ? isManualModeActive ? "手动模式 - 游戏中" : "手动模式 - 创建中"
             : `自动生成 - ${difficulty?.name || "中等"}`}
         </div>
       </div>
@@ -377,7 +554,10 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
           selectedCell={selectedCell}
           highlightedNumber={highlightedNumber}
           initialBoard={initialBoard}
-          initFlag={initFlag}
+          initFlag={mode === "manual" && !isManualModeActive ? 
+            Array(9).fill(null).map(() => Array(9).fill(0)) : // 手动模式创建阶段，所有格子都可编辑
+            initFlag // 游戏开始后，使用正常的初始格子标识
+          }
           onCellClick={handleCellClick}
         />
 
@@ -404,14 +584,32 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
 
       <div className="game-instructions">
         <h3>游戏说明：</h3>
-        <ul>
-          <li>点击格子选择，然后点击数字按钮填入</li>
-          <li>按 N 键或点击笔记按钮切换笔记模式</li>
-          <li>笔记模式下可以添加多个数字作为提示</li>
-          <li>点击已填入数字的格子会高亮相同数字</li>
-          <li>使用键盘 1-9 输入数字，Delete 清除</li>
-        </ul>
+        {mode === "manual" && !isManualModeActive ? (
+          <ul>
+            <li>手动模式：点击格子选择，然后点击数字按钮填入数字</li>
+            <li>按 N 键或点击笔记按钮切换笔记模式</li>
+            <li>笔记模式下可以添加多个数字作为提示</li>
+            <li>可以点击"导入"按钮上传JSON或图片文件</li>
+            <li>完成数独创建后，点击"完成创建"按钮开始游戏</li>
+            <li>使用键盘 1-9 输入数字，Delete 清除</li>
+          </ul>
+        ) : (
+          <ul>
+            <li>点击格子选择，然后点击数字按钮填入</li>
+            <li>按 N 键或点击笔记按钮切换笔记模式</li>
+            <li>笔记模式下可以添加多个数字作为提示</li>
+            <li>点击已填入数字的格子会高亮相同数字</li>
+            <li>使用键盘 1-9 输入数字，Delete 清除</li>
+          </ul>
+        )}
       </div>
+
+      {/* 导入对话框 */}
+      <ImportDialog
+        isOpen={isImportDialogOpen}
+        onClose={() => setIsImportDialogOpen(false)}
+        onImport={handleImport}
+      />
     </div>
   );
 };
