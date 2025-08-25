@@ -4,3 +4,4 @@
 
 export * from './sudokuGenerator';
 export * from './imageRecognition';
+export * from './save';

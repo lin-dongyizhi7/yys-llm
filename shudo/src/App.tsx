@@ -11,6 +11,7 @@ import './App.css';
 import HomePage from './views/HomePage';
 import SudokuGame from './components/SudokuGame';
 import { SudokuGenerator, SudokuDifficulty } from './utils';
+import { saveSudokuToJson } from './utils';
 
 export type GameMode = 'manual' | 'generate';
 
@@ -19,13 +20,21 @@ function App() {
   const [initialBoard, setInitialBoard] = useState<number[][] | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<SudokuDifficulty | null>(null);
 
-  const handleModeSelect = (mode: GameMode, difficulty?: SudokuDifficulty) => {
+  const handleModeSelect = async (mode: GameMode, difficulty?: SudokuDifficulty) => {
     setGameMode(mode);
     if (mode === 'generate') {
       // 生成指定难度的数独游戏
       const generatedBoard = generateSudoku(difficulty);
       setInitialBoard(generatedBoard);
       setSelectedDifficulty(difficulty || null);
+
+      // 保存为JSON（文件名：日期-时间-难度）
+      try {
+        await saveSudokuToJson(generatedBoard, { difficultyName: difficulty?.name || '未知' });
+      } catch (e) {
+        // 忽略保存失败（用户取消或API不可用）
+        console.warn('保存数独JSON失败或已取消', e);
+      }
     } else {
       // 手动模式，创建空白板
       setInitialBoard(createEmptyBoard());
