@@ -507,3 +507,89 @@ export async function quickRecognize(imageFile: File): Promise<RecognitionResult
     recognizer.dispose();
   }
 }
+
+/**
+ * 使用 tesseract.js 的快速OCR识别：将整张图均匀切分为9x9并识别单元格
+ * 适用于图片较为标准且网格基本对齐的情况
+ */
+export async function quickRecognizeOCR(imageFile: File): Promise<RecognitionResult> {
+  try {
+    // 动态导入，避免对未使用场景的额外体积影响
+    const Tesseract: any = (await import('tesseract.js')).default;
+
+    // 复用本模块的图片加载逻辑
+    const loader = new SudokuImageRecognizer();
+    try {
+      const image = await (loader as any).loadImage(imageFile);
+
+      // 创建工作画布
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d')!;
+      canvas.width = image.width;
+      canvas.height = image.height;
+      ctx.drawImage(image, 0, 0);
+
+      const board: number[][] = Array(9)
+        .fill(null)
+        .map(() => Array(9).fill(0));
+
+      const cellWidth = Math.floor(canvas.width / 9);
+      const cellHeight = Math.floor(canvas.height / 9);
+
+      // 逐格识别
+      for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+          const x = col * cellWidth;
+          const y = row * cellHeight;
+
+          // 为该格子创建单独canvas，做简单的二值化增强
+          const cellCanvas = document.createElement('canvas');
+          const cellCtx = cellCanvas.getContext('2d')!;
+          cellCanvas.width = cellWidth;
+          cellCanvas.height = cellHeight;
+
+          const cellImageData = ctx.getImageData(x, y, cellWidth, cellHeight);
+          const data = cellImageData.data;
+          // 简单二值化
+          for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const v = 0.299 * r + 0.587 * g + 0.114 * b;
+            const bw = v > 180 ? 255 : 0;
+            data[i] = data[i + 1] = data[i + 2] = bw;
+          }
+          cellCtx.putImageData(cellImageData, 0, 0);
+
+          // 使用OCR识别单字符数字
+          const { data: ocr } = await Tesseract.recognize(cellCanvas, 'eng', {
+            tessedit_char_whitelist: '0123456789',
+            // psm 10: Treat the image as a single character
+            // 通过 config string 传入
+            // tesseract.js 接收 config 也可放在第三参对象中
+            // 这里组合方式兼容常见用法
+            classify_bln_numeric_mode: 1,
+            psm: 10
+          });
+
+          const text = (ocr && ocr.text ? ocr.text : '').trim();
+          const digit = /^[0-9]$/.test(text) ? parseInt(text, 10) : 0;
+          board[row][col] = isNaN(digit) ? 0 : digit;
+        }
+      }
+
+      return {
+        success: true,
+        board,
+        confidence: 0.7
+      };
+    } finally {
+      loader.dispose();
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'OCR识别失败'
+    };
+  }
+}

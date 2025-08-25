@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import './ImportDialog.css';
-import { quickRecognize, RecognitionResult } from '../../utils/imageRecognition';
+import { quickRecognize, quickRecognizeOCR, RecognitionResult } from '../../utils/imageRecognition';
 
 interface ImportDialogProps {
   isOpen: boolean;
@@ -80,9 +80,15 @@ const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onImport }
     try {
       console.log('🖼️ 开始图片识别...');
       
-      // 使用图片识别功能
-      const result: RecognitionResult = await quickRecognize(file);
+      // 优先使用OCR识别（对标准网格识别效果更好）
+      let result: RecognitionResult = await quickRecognizeOCR(file);
       
+      // 如果OCR失败，则回退到原有的几何管道识别
+      if (!result.success) {
+        console.warn('OCR识别失败，尝试回退到几何识别');
+        result = await quickRecognize(file);
+      }
+
       if (result.success && result.board) {
         console.log('✅ 图片识别成功');
         console.log('📊 识别结果:', result.board);
@@ -139,7 +145,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onImport }
               />
               JSON文件
             </label>
-            <label>
+            {/* <label>
               <input
                 type="radio"
                 value="image"
@@ -147,7 +153,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onImport }
                 onChange={(e) => setFileType(e.target.value as 'json' | 'image')}
               />
               图片文件
-            </label>
+            </label> */}
           </div>
 
           <div className="file-upload-area"
