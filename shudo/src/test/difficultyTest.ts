@@ -2,7 +2,7 @@
  * 难度选择功能测试
  */
 
-import { SudokuGenerator, SudokuDifficulty } from './sudokuGenerator';
+import { SudokuGenerator, SudokuDifficulty } from '../utils/sudokuGenerator';
 
 export function testDifficultySelection() {
   console.log('🧪 测试难度选择功能...\n');

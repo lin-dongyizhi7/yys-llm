@@ -3,7 +3,7 @@
  * 用于验证生成器的各种功能
  */
 
-import { SudokuGenerator, SudokuDifficulty } from './sudokuGenerator';
+import { SudokuGenerator, SudokuDifficulty } from '../utils/sudokuGenerator';
 
 // 测试数独生成器的基本功能
 export function testSudokuGenerator() {
