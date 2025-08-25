@@ -11,6 +11,7 @@ from model import SudokuTransformer, board_to_tokens
 from solver import solve_backtrack
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'trainData')
+CKPT_DIR_DEFAULT = os.path.join(os.path.dirname(__file__), 'checkpoints')
 
 class SudokuJsonlDataset(Dataset):
     def __init__(self, path: str):
@@ -45,7 +46,43 @@ def collate(batch):
     return torch.stack(srcs, dim=0), torch.stack(dec_ins, dim=0), torch.stack(labels, dim=0)
 
 
-def train(model_path: str = 'sudoku_transformer.pt', data_prefix: str = 'train_sudoku.jsonl', epochs: int = 3, batch_size: int = 64, lr: float = 3e-4, device: str = 'cuda' if torch.cuda.is_available() else 'cpu'):
+def latest_checkpoint(ckpt_dir: str) -> str | None:
+    if not os.path.isdir(ckpt_dir):
+        return None
+    files = [f for f in os.listdir(ckpt_dir) if f.endswith('.pt') or f.endswith('.ckpt')]
+    if not files:
+        return None
+    files.sort()
+    return os.path.join(ckpt_dir, files[-1])
+
+
+def save_checkpoint(ckpt_dir: str, epoch: int, global_step: int, model: nn.Module, optimizer: torch.optim.Optimizer, model_path: str | None = None):
+    os.makedirs(ckpt_dir, exist_ok=True)
+    ckpt_path = os.path.join(ckpt_dir, f'epoch{epoch:03d}_step{global_step}.ckpt')
+    state = {
+        'epoch': epoch,
+        'global_step': global_step,
+        'model_state': model.state_dict(),
+        'optimizer_state': optimizer.state_dict(),
+    }
+    torch.save(state, ckpt_path)
+    # 可选额外保存权重快照
+    if model_path:
+        os.makedirs(os.path.dirname(model_path) or '.', exist_ok=True)
+        torch.save(model.state_dict(), model_path)
+    return ckpt_path
+
+
+def load_checkpoint(ckpt_path: str, model: nn.Module, optimizer: torch.optim.Optimizer, device: str):
+    state = torch.load(ckpt_path, map_location=device)
+    model.load_state_dict(state['model_state'])
+    optimizer.load_state_dict(state['optimizer_state'])
+    start_epoch = int(state.get('epoch', 0))
+    global_step = int(state.get('global_step', 0))
+    return start_epoch, global_step
+
+
+def train(model_path: str = 'models/sudoku_transformer.pt', data_prefix: str = 'train_sudoku.jsonl', epochs: int = 3, batch_size: int = 64, lr: float = 3e-4, device: str = 'cuda' if torch.cuda.is_available() else 'cpu', ckpt_dir: str = CKPT_DIR_DEFAULT, resume: bool = True, save_every_steps: int = 0):
     data_path = os.path.join(DATA_DIR, data_prefix)
     dataset = SudokuJsonlDataset(data_path)
     loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0, collate_fn=collate)
@@ -54,34 +91,57 @@ def train(model_path: str = 'sudoku_transformer.pt', data_prefix: str = 'train_s
     model.to(device)
 
     criterion = nn.CrossEntropyLoss()
-    optim = torch.optim.AdamW(model.parameters(), lr=lr)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
 
-    model.train()
-    for epoch in range(1, epochs + 1):
-        pbar = tqdm(loader, desc=f"epoch {epoch}")
-        total_loss = 0.0
-        for src, dec_in, labels in pbar:
-            src = src.to(device)
-            dec_in = dec_in.to(device)
-            labels = labels.to(device)
+    # 断点续训
+    start_epoch = 0
+    global_step = 0
+    if resume:
+        ckpt_path = latest_checkpoint(ckpt_dir)
+        if ckpt_path:
+            try:
+                start_epoch, global_step = load_checkpoint(ckpt_path, model, optimizer, device)
+                print(f"[resume] loaded checkpoint: {ckpt_path} (epoch={start_epoch}, step={global_step})")
+            except Exception as e:
+                print(f"[resume] failed to load checkpoint: {e}")
 
-            optim.zero_grad()
-            logits = model(src, dec_in)  # [B, T, vocab]
-            loss = criterion(logits.reshape(-1, logits.size(-1)), labels.reshape(-1))
-            loss.backward()
-            optim.step()
+    try:
+        model.train()
+        for epoch in range(start_epoch + 1, epochs + 1):
+            pbar = tqdm(loader, desc=f"epoch {epoch}")
+            total_loss = 0.0
+            for src, dec_in, labels in pbar:
+                src = src.to(device)
+                dec_in = dec_in.to(device)
+                labels = labels.to(device)
 
-            total_loss += loss.item()
-            pbar.set_postfix(loss=f"{loss.item():.4f}")
+                optimizer.zero_grad()
+                logits = model(src, dec_in)  # [B, T, vocab]
+                loss = criterion(logits.reshape(-1, logits.size(-1)), labels.reshape(-1))
+                loss.backward()
+                optimizer.step()
 
-        avg = total_loss / len(loader)
-        print(f"epoch {epoch}: avg loss = {avg:.4f}")
-        torch.save(model.state_dict(), model_path)
+                global_step += 1
+                total_loss += loss.item()
+                pbar.set_postfix(loss=f"{loss.item():.4f}")
 
-    print("training done. saved to", model_path)
+                # 步级保存（可选）
+                if save_every_steps and (global_step % save_every_steps == 0):
+                    save_checkpoint(ckpt_dir, epoch, global_step, model, optimizer, model_path)
+
+            avg = total_loss / len(loader)
+            print(f"epoch {epoch}: avg loss = {avg:.4f}")
+            # epoch级保存
+            save_checkpoint(ckpt_dir, epoch, global_step, model, optimizer, model_path)
+
+        print("training done. saved to", model_path)
+    except KeyboardInterrupt:
+        # 中断时保存一次
+        ckpt_path = save_checkpoint(ckpt_dir, epoch if 'epoch' in locals() else start_epoch, global_step, model, optimizer, model_path)
+        print(f"\n[interrupt] training interrupted. checkpoint saved to {ckpt_path}")
 
 
-def quick_eval(model_path: str = 'sudoku_transformer.pt', n: int = 10, data_prefix: str = 'train_sudoku.jsonl', device: str = 'cuda' if torch.cuda.is_available() else 'cpu'):
+def quick_eval(model_path: str = 'models/sudoku_transformer.pt', n: int = 10, data_prefix: str = 'train_sudoku.jsonl', device: str = 'cuda' if torch.cuda.is_available() else 'cpu'):
     data_path = os.path.join(DATA_DIR, data_prefix)
     dataset = SudokuJsonlDataset(data_path)
     model = SudokuTransformer()
@@ -122,15 +182,24 @@ if __name__ == '__main__':
     import argparse
     ap = argparse.ArgumentParser()
     ap.add_argument('--mode', type=str, default='train', choices=['train', 'eval'])
-    ap.add_argument('--epochs', type=int, default=3)
+    ap.add_argument('--epochs', type=int, default=10)
     ap.add_argument('--batch_size', type=int, default=64)
     ap.add_argument('--lr', type=float, default=3e-4)
-    ap.add_argument('--model_path', type=str, default='sudoku_transformer.pt')
+    ap.add_argument('--model_path', type=str, default='models/sudoku_transformer.pt')
     ap.add_argument('--data_prefix', type=str, default='train_sudoku.jsonl')
     ap.add_argument('--eval_n', type=int, default=20)
+    ap.add_argument('--resume', action='store_true', help='从最近检查点断点续训')
+    ap.add_argument('--no_resume', action='store_true', help='不进行断点续训')
+    ap.add_argument('--ckpt_dir', type=str, default=CKPT_DIR_DEFAULT, help='检查点目录')
+    ap.add_argument('--save_every_steps', type=int, default=0, help='步级保存间隔(0为仅每epoch保存)')
     args = ap.parse_args()
 
     if args.mode == 'train':
-        train(model_path=args.model_path, data_prefix=args.data_prefix, epochs=args.epochs, batch_size=args.batch_size, lr=args.lr)
+        resume = True
+        if args.no_resume:
+            resume = False
+        if args.resume:
+            resume = True
+        train(model_path=args.model_path, data_prefix=args.data_prefix, epochs=args.epochs, batch_size=args.batch_size, lr=args.lr, ckpt_dir=args.ckpt_dir, resume=resume, save_every_steps=args.save_every_steps)
     else:
         quick_eval(model_path=args.model_path, n=args.eval_n, data_prefix=args.data_prefix)

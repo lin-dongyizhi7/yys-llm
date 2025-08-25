@@ -53,6 +53,8 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
   const [isManualModeActive, setIsManualModeActive] = useState<boolean>(false);
   // 新增：导入对话框状态
   const [isImportDialogOpen, setIsImportDialogOpen] = useState<boolean>(false);
+  // 新增：测试导入对话框状态
+  const [isTestDialogOpen, setIsTestDialogOpen] = useState<boolean>(false);
   // 使用useRef创建初始格子标识常量，确保在游戏开始后永不改变
   const initFlagRef = useRef<number[][]>();
   
@@ -508,6 +510,46 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
     console.log("✅ 数独数据导入完成");
   };
 
+  // 测试导入：仅填充当前空格，不覆盖已有或initFlag为1的格子
+  const handleTestImport = (importedBoard: number[][]) => {
+    console.log("🧪 测试导入开始");
+    console.log("📋 测试导入的数独面板:");
+    console.table(importedBoard);
+
+    // 基础校验 9x9
+    const isValidSize =
+      Array.isArray(importedBoard) &&
+      importedBoard.length === 9 &&
+      importedBoard.every((row) => Array.isArray(row) && row.length === 9);
+    if (!isValidSize) {
+      console.error("❌ 测试导入失败：JSON必须为9x9数组");
+      setIsTestDialogOpen(false);
+      return;
+    }
+
+    const newBoard = board.map((row) => [...row]);
+    const newNotes = notes.map((row) => row.map((cell) => [...cell])) as number[][][];
+    let filledCount = 0;
+
+    for (let r = 0; r < 9; r++) {
+      for (let c = 0; c < 9; c++) {
+        const canFill = board[r][c] === 0 && initFlag[r][c] !== 1;
+        const val = importedBoard[r][c];
+        if (canFill && typeof val === "number" && val > 0 && val <= 9) {
+          newBoard[r][c] = val;
+          newNotes[r][c] = [];
+          filledCount++;
+        }
+      }
+    }
+
+    setBoard(newBoard);
+    setNotes(newNotes);
+    setIsTestDialogOpen(false);
+
+    console.log(`✅ 测试导入完成：填充了 ${filledCount} 个空格`);
+  };
+
   return (
     <div className="sudoku-game">
       <div className="game-header">
@@ -525,6 +567,12 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
                 onClick={() => setIsImportDialogOpen(true)}
               >
                 📁 导入
+              </button>
+              <button 
+                className="import-button"
+                onClick={() => setIsTestDialogOpen(true)}
+              >
+                🧪 测试
               </button>
               <button 
                 className="finish-creation-button"
@@ -609,6 +657,13 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
         isOpen={isImportDialogOpen}
         onClose={() => setIsImportDialogOpen(false)}
         onImport={handleImport}
+      />
+
+      {/* 测试导入对话框：仅填充空格 */}
+      <ImportDialog
+        isOpen={isTestDialogOpen}
+        onClose={() => setIsTestDialogOpen(false)}
+        onImport={handleTestImport}
       />
     </div>
   );

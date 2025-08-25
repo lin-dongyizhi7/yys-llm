@@ -98,5 +98,5 @@ def save_dataset(num_samples: int = 1000, prefix: str = 'train'):
     return out_path
 
 if __name__ == '__main__':
-    path = save_dataset(num_samples=200, prefix='train')
+    path = save_dataset(num_samples=2000, prefix='train')
     print('saved:', path)

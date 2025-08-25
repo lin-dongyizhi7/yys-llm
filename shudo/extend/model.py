@@ -46,15 +46,120 @@ class SudokuTransformer(nn.Module):
         logits = self.out(out)  # [B, T, vocab]
         return logits
 
-    def generate(self, src_tokens: torch.Tensor, max_len: int = 81) -> torch.Tensor:
-        # 自回归生成解序列
+    @staticmethod
+    def _idx_to_rc(idx: int) -> Tuple[int, int]:
+        r = idx // 9
+        c = idx % 9
+        return r, c
+
+    @staticmethod
+    def _allowed_digits_for_cell(givens_row: torch.Tensor, givens_col: torch.Tensor, givens_box: torch.Tensor,
+                                 pred_row: torch.Tensor, pred_col: torch.Tensor, pred_box: torch.Tensor,
+                                 r: int, c: int, given_val: int) -> torch.Tensor:
+        """
+        返回长度10的布尔向量(0/1 float)，1表示该token允许；这里将0（空）也屏蔽。
+        若该位置是题面给定(given_val>0)，仅允许该数字。
+        否则允许1..9中未在同一行、列、宫出现的数字。
+        """
+        mask = torch.zeros(10, dtype=torch.float32, device=givens_row.device)
+        if given_val > 0:
+            mask[given_val] = 1.0
+            return mask
+        # 收集已出现的数
+        used = torch.zeros(10, dtype=torch.bool, device=givens_row.device)
+        # 行/列/宫中来自题面与已预测的数字
+        for d in range(1, 10):
+            if givens_row[r, d] or pred_row[r, d]:
+                used[d] = True
+            if givens_col[c, d] or pred_col[c, d]:
+                used[d] = True
+        b = (r // 3) * 3 + (c // 3)
+        for d in range(1, 10):
+            if givens_box[b, d] or pred_box[b, d]:
+                used[d] = True
+        # 允许未使用的1..9
+        for d in range(1, 10):
+            if not used[d]:
+                mask[d] = 1.0
+        return mask
+
+    def generate_with_constraints(self, src_tokens: torch.Tensor, max_len: int = 81) -> torch.Tensor:
+        """
+        约束解码：逐步生成，每步屏蔽与题面和当前部分预测冲突的数字（行/列/宫），并屏蔽token=0。
+        src_tokens: [B, 81]
+        返回: [B, 81]
+        """
+        device = src_tokens.device
         B = src_tokens.size(0)
-        ys = torch.zeros(B, 1, dtype=torch.long, device=src_tokens.device)  # 从0 token开始（可用作起始符）
-        for _ in range(max_len):
-            logits = self.forward(src_tokens, ys)
-            next_token = torch.argmax(logits[:, -1, :], dim=-1, keepdim=True)
+        # 初始化解序列，以0作为BOS
+        ys = torch.zeros(B, 1, dtype=torch.long, device=device)
+
+        # 预处理题面给定的计数表 one-hot 统计: [B, 9(or 10)]
+        # 我们使用维度10，索引1..9有效
+        givens_row = torch.zeros(B, 9, 10, dtype=torch.bool, device=device)
+        givens_col = torch.zeros(B, 9, 10, dtype=torch.bool, device=device)
+        givens_box = torch.zeros(B, 9, 10, dtype=torch.bool, device=device)
+        given_vals = src_tokens.view(B, 9, 9)
+        for b in range(B):
+            for r in range(9):
+                for c in range(9):
+                    v = int(given_vals[b, r, c].item())
+                    if v > 0:
+                        givens_row[b, r, v] = True
+                        givens_col[b, c, v] = True
+                        box_idx = (r // 3) * 3 + (c // 3)
+                        givens_box[b, box_idx, v] = True
+
+        # 预测中已放置的数字统计
+        pred_row = torch.zeros_like(givens_row)
+        pred_col = torch.zeros_like(givens_col)
+        pred_box = torch.zeros_like(givens_box)
+
+        # 维护一个当前预测棋盘
+        pred_board = torch.zeros(B, 81, dtype=torch.long, device=device)
+
+        for t in range(max_len):
+            logits = self.forward(src_tokens, ys)  # [B, t+1, vocab]
+            step_logits = logits[:, -1, :]        # [B, vocab]
+
+            # 计算该位置的(r,c)与题面给定
+            r, c = self._idx_to_rc(t)
+            given_here = given_vals[:, r, c]  # [B]
+
+            # 构造掩码
+            masks = torch.zeros(B, 10, dtype=torch.float32, device=device)
+            for b in range(B):
+                gval = int(given_here[b].item())
+                masks[b] = self._allowed_digits_for_cell(
+                    givens_row[b], givens_col[b], givens_box[b],
+                    pred_row[b], pred_col[b], pred_box[b],
+                    r, c, gval
+                )
+
+            # 将不允许的token置为 -inf
+            disallow = (masks < 0.5)
+            step_logits = step_logits.masked_fill(disallow, float('-inf'))
+
+            # 选取下一个token
+            next_token = torch.argmax(step_logits, dim=-1, keepdim=True)  # [B,1]
+
+            # 更新预测棋盘与计数
+            for b in range(B):
+                v = int(next_token[b, 0].item())
+                pred_board[b, t] = v
+                if v > 0:
+                    pred_row[b, r, v] = True
+                    pred_col[b, c, v] = True
+                    box_idx = (r // 3) * 3 + (c // 3)
+                    pred_box[b, box_idx, v] = True
+
             ys = torch.cat([ys, next_token], dim=1)
+
         return ys[:, 1:]
+
+    def generate(self, src_tokens: torch.Tensor, max_len: int = 81) -> torch.Tensor:
+        # 默认使用带约束的生成，避免行/列/宫内重复
+        return self.generate_with_constraints(src_tokens, max_len=max_len)
 
 
 def board_to_tokens(board) -> torch.Tensor:
