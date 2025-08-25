@@ -7,6 +7,8 @@ interface GameControlsProps {
   onClearSelection: () => void;
   onResetGame: () => void;
   onClearAllNotes: () => void;
+  onTogglePause: () => void;
+  isPaused: boolean;
 }
 
 const GameControls: React.FC<GameControlsProps> = ({
@@ -14,7 +16,9 @@ const GameControls: React.FC<GameControlsProps> = ({
   onToggleNoteMode,
   onClearSelection,
   onResetGame,
-  onClearAllNotes
+  onClearAllNotes,
+  onTogglePause,
+  isPaused
 }) => {
   return (
     <div className="game-controls">
@@ -46,13 +50,25 @@ const GameControls: React.FC<GameControlsProps> = ({
         <span className="button-text">重置游戏</span>
       </button>
       
-      <button
-        className="control-button clear-notes"
-        onClick={onClearAllNotes}
-      >
-        <span className="button-icon">🗑️</span>
-        <span className="button-text">清除所有笔记</span>
-      </button>
+                    <button
+                className="control-button clear-notes"
+                onClick={onClearAllNotes}
+              >
+                <span className="button-icon">🗑️</span>
+                <span className="button-text">清除所有笔记</span>
+              </button>
+
+              <button
+                className={`control-button ${isPaused ? 'resume' : 'pause'}`}
+                onClick={onTogglePause}
+              >
+                <span className="button-icon">
+                  {isPaused ? '▶️' : '⏸️'}
+                </span>
+                <span className="button-text">
+                  {isPaused ? '继续游戏' : '暂停游戏'}
+                </span>
+              </button>
       
       <div className="keyboard-hints">
         <h4>键盘快捷键</h4>

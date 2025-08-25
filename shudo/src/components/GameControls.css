@@ -51,6 +51,16 @@
   background: #ffebee;
 }
 
+.control-button.pause:hover {
+  border-color: #ff9800;
+  background: #fff3e0;
+}
+
+.control-button.resume:hover {
+  border-color: #4caf50;
+  background: #e8f5e8;
+}
+
 .button-icon {
   font-size: 1.2rem;
 }

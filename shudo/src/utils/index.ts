@@ -3,4 +3,3 @@
  */
 
 export * from './sudokuGenerator';
-export * from './difficultyTest';

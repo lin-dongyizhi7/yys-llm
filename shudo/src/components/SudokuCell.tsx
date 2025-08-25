@@ -10,6 +10,7 @@ interface SudokuCellProps {
   isInSameCol: boolean;
   isInSameBox: boolean;
   isInitial: boolean;
+  isConflict: boolean;
   onClick: () => void;
 }
 
@@ -22,11 +23,12 @@ const SudokuCell: React.FC<SudokuCellProps> = ({
   isInSameCol,
   isInSameBox,
   isInitial,
+  isConflict,
   onClick
 }) => {
-  const getCellClassName = (): string => {
+    const getCellClassName = (): string => {
     let className = 'sudoku-cell';
-    
+
     if (isSelected) {
       className += ' selected';
     } else if (isHighlighted) {
@@ -34,11 +36,15 @@ const SudokuCell: React.FC<SudokuCellProps> = ({
     } else if (isInSameRow || isInSameCol || isInSameBox) {
       className += ' related';
     }
-    
+
     if (isInitial) {
       className += ' initial';
     }
-    
+
+    if (isConflict) {
+      className += ' conflict';
+    }
+
     return className;
   };
 
