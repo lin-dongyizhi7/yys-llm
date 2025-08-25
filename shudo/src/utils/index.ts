@@ -3,3 +3,4 @@
  */
 
 export * from './sudokuGenerator';
+export * from './imageRecognition';

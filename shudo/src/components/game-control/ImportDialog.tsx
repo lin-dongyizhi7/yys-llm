@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import './ImportDialog.css';
+import { quickRecognize, RecognitionResult } from '../../utils/imageRecognition';
 
 interface ImportDialogProps {
   isOpen: boolean;
@@ -76,28 +77,27 @@ const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onImport }
   };
 
   const handleImageFile = async (file: File): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
+    try {
+      console.log('🖼️ 开始图片识别...');
       
-      reader.onload = (e) => {
-        try {
-          const img = new Image();
-          img.onload = () => {
-            // 这里可以实现图像识别逻辑
-            // 目前先显示一个提示信息
-            setError('图片识别功能正在开发中，请使用JSON格式导入');
-            reject(new Error('图片识别功能正在开发中'));
-          };
-          img.onerror = () => reject(new Error('图片加载失败'));
-          img.src = e.target?.result as string;
-        } catch (err) {
-          reject(err);
-        }
-      };
+      // 使用图片识别功能
+      const result: RecognitionResult = await quickRecognize(file);
       
-      reader.onerror = () => reject(new Error('文件读取失败'));
-      reader.readAsDataURL(file);
-    });
+      if (result.success && result.board) {
+        console.log('✅ 图片识别成功');
+        console.log('📊 识别结果:', result.board);
+        console.log(`🎯 置信度: ${(result.confidence || 0) * 100}%`);
+        
+        onImport(result.board);
+        onClose();
+      } else {
+        throw new Error(result.error || '图片识别失败');
+      }
+      
+    } catch (err) {
+      console.error('❌ 图片识别失败:', err);
+      throw err;
+    }
   };
 
   const handleDrop = (event: React.DragEvent) => {
@@ -174,7 +174,12 @@ const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onImport }
           {isLoading && (
             <div className="loading">
               <div className="spinner"></div>
-              <p>正在处理文件...</p>
+              <p>
+                {fileType === 'json' 
+                  ? '正在解析JSON文件...'
+                  : '正在识别图片中的数独...'
+                }
+              </p>
             </div>
           )}
 
@@ -200,6 +205,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onImport }
                   <li>图片应包含清晰的数独网格</li>
                   <li>系统将自动识别数字并转换为数独数据</li>
                   <li>建议使用高分辨率、对比度高的图片</li>
+                  <li>识别准确率取决于图片质量和清晰度</li>
                 </>
               )}
             </ul>
