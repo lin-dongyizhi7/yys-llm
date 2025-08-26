@@ -102,56 +102,143 @@
 }
 
 .file-type-selector input[type="radio"] {
-  width: 18px;
-  height: 18px;
+  margin: 0;
   accent-color: #667eea;
+}
+
+/* 识别方法选择器 */
+.recognition-method-selector {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 24px;
+  padding: 8px 16px;
+  background: #f0f8ff;
+  border-radius: 12px;
+  border: 1px solid #d1ecf1;
+}
+
+.recognition-method-selector label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #0c5460;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.recognition-method-selector label:hover {
+  background: #d1ecf1;
+}
+
+.recognition-method-selector input[type="radio"] {
+  margin: 0;
+  accent-color: #17a2b8;
 }
 
 .file-upload-area {
   border: 3px dashed #ddd;
   border-radius: 16px;
-  padding: 20px 20px;
+  padding: 40px 20px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  background: #fafbfc;
+  background: #fafafa;
   margin-bottom: 24px;
+  position: relative;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .file-upload-area:hover {
   border-color: #667eea;
-  background: #f0f4ff;
-  transform: translateY(-2px);
+  background: #f8f9ff;
 }
 
 .file-upload-area.dragover {
   border-color: #667eea;
-  background: #e8f2ff;
+  background: #f0f4ff;
   transform: scale(1.02);
 }
 
 .upload-icon {
   font-size: 3rem;
   margin-bottom: 16px;
-  opacity: 0.7;
-}
-
-.file-upload-area p {
-  margin: 8px 0;
-  color: #666;
-  font-size: 1rem;
+  color: #667eea;
 }
 
 .file-format-hint {
-  color: #667eea !important;
+  color: #666;
+  font-size: 0.9rem;
+  margin-top: 8px;
+}
+
+/* 图片预览样式 */
+.image-preview-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-preview {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  object-fit: contain;
+}
+
+.image-preview-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.image-preview-container:hover .image-preview-overlay {
+  opacity: 1;
+}
+
+.change-image-btn {
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
   font-weight: 500;
-  font-size: 0.9rem !important;
+  color: #333;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.change-image-btn:hover {
+  background: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
 .loading {
   text-align: center;
-  padding: 20px;
-  margin-bottom: 20px;
+  padding: 24px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  margin-bottom: 24px;
 }
 
 .spinner {
@@ -169,26 +256,58 @@
   100% { transform: rotate(360deg); }
 }
 
-.loading p {
-  color: #666;
+/* 识别进度条 */
+.recognition-progress {
+  margin-top: 16px;
+  padding: 16px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  border-radius: 4px;
+  animation: progressFill 2s ease-in-out infinite;
+}
+
+@keyframes progressFill {
+  0% { width: 0%; }
+  50% { width: 70%; }
+  100% { width: 100%; }
+}
+
+.progress-text {
   margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .error-message {
-  background: #fee;
-  color: #c33;
-  padding: 16px;
-  border-radius: 12px;
-  margin-bottom: 20px;
-  border-left: 4px solid #c33;
+  background: #f8d7da;
+  color: #721c24;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  border: 1px solid #f5c6cb;
   font-weight: 500;
 }
 
 .import-instructions {
   background: #f8f9fa;
+  padding: 20px;
   border-radius: 12px;
-  padding: 12px 20px;
-  height: 210px;
   border-left: 4px solid #667eea;
 }
 
@@ -199,26 +318,14 @@
 }
 
 .import-instructions ul {
-  list-style: none;
-  padding: 0;
   margin: 0;
+  padding-left: 20px;
+  color: #555;
+  line-height: 1.6;
 }
 
 .import-instructions li {
   margin-bottom: 8px;
-  padding-left: 20px;
-  position: relative;
-  color: #555;
-  line-height: 1.5;
-  font-size: 0.8rem;
-}
-
-.import-instructions li::before {
-  content: "•";
-  color: #667eea;
-  font-weight: bold;
-  position: absolute;
-  left: 0;
 }
 
 .import-instructions code {
@@ -227,7 +334,6 @@
   border-radius: 4px;
   font-family: 'Courier New', monospace;
   font-size: 0.9rem;
-  color: #333;
 }
 
 /* 响应式设计 */
@@ -237,20 +343,24 @@
     margin: 20px;
   }
   
-  .import-dialog-header {
-    padding: 16px 20px;
-  }
-  
   .import-dialog-content {
-    padding: 20px;
+    padding: 16px;
+    height: auto;
+    max-height: 70vh;
   }
   
-  .file-type-selector {
+  .file-type-selector,
+  .recognition-method-selector {
     flex-direction: column;
     gap: 12px;
   }
   
   .file-upload-area {
-    padding: 30px 16px;
+    padding: 24px 16px;
+    min-height: 150px;
+  }
+  
+  .image-preview {
+    max-height: 200px;
   }
 }

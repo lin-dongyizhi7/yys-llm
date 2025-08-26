@@ -494,18 +494,195 @@ export function createSudokuRecognizer(): SudokuImageRecognizer {
 }
 
 /**
- * 简化的图片识别函数（用于快速测试）
+ * 使用 Transformer 模型进行数独图像识别
  * @param imageFile 图片文件
  * @returns 识别结果
  */
 export async function quickRecognize(imageFile: File): Promise<RecognitionResult> {
-  const recognizer = createSudokuRecognizer();
   try {
-    const result = await recognizer.recognizeFromFile(imageFile);
-    return result;
-  } finally {
-    recognizer.dispose();
+    console.log('🧠 开始使用 Transformer 模型识别数独...');
+    
+    // 动态导入 TensorFlow.js 和预训练模型
+    const tf = await import('@tensorflow/tfjs');
+    console.log('✅ TensorFlow.js 加载完成');
+    
+    // 加载预训练的数独识别模型
+    const model = await tf.loadLayersModel('/models/sudoku_transformer/model.json');
+    console.log('✅ Transformer 模型加载完成');
+    
+    // 加载和预处理图片
+    const image = await loadImageToTensor(imageFile, tf);
+    console.log('✅ 图片预处理完成，尺寸:', image.shape);
+    
+    // 使用模型进行预测
+    const predictions = await model.predict(image) as any;
+    console.log('✅ 模型预测完成');
+    
+    // 后处理预测结果，转换为数独板
+    const board = await processPredictions(predictions, tf);
+    
+    // 清理内存
+    tf.dispose([image, predictions]);
+    
+    console.log('✅ Transformer 识别完成');
+    return {
+      success: true,
+      board,
+      confidence: 0.85 // Transformer 模型通常有较高的置信度
+    };
+    
+  } catch (error) {
+    console.error('❌ Transformer 识别失败:', error);
+    
+    // 如果 Transformer 失败，回退到传统的几何识别方法
+    console.log('🔄 回退到传统几何识别方法...');
+    try {
+      const recognizer = createSudokuRecognizer();
+      const result = await recognizer.recognizeFromFile(imageFile);
+      recognizer.dispose();
+      return result;
+    } catch (fallbackError) {
+      console.error('❌ 回退方法也失败:', fallbackError);
+      return {
+        success: false,
+        error: `Transformer识别失败: ${error instanceof Error ? error.message : '未知错误'}，回退方法也失败: ${fallbackError instanceof Error ? fallbackError.message : '未知错误'}`
+      };
+    }
   }
+}
+
+/**
+ * 将图片文件加载为 TensorFlow 张量
+ * @param imageFile 图片文件
+ * @param tf TensorFlow.js 实例
+ * @returns 预处理后的图片张量
+ */
+async function loadImageToTensor(imageFile: File, tf: any): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const img = new Image();
+        img.onload = async () => {
+          try {
+            // 创建 canvas 进行图片处理
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d')!;
+            
+            // 设置标准输入尺寸 (通常是 224x224 或 256x256)
+            const inputSize = 256;
+            canvas.width = inputSize;
+            canvas.height = inputSize;
+            
+            // 绘制并调整图片尺寸
+            ctx.drawImage(img, 0, 0, inputSize, inputSize);
+            
+            // 获取图片数据
+            const imageData = ctx.getImageData(0, 0, inputSize, inputSize);
+            
+            // 转换为 TensorFlow 张量
+            const tensor = tf.browser.fromPixels(imageData, 3); // RGB 3通道
+            
+            // 归一化到 [0, 1] 范围
+            const normalized = tf.div(tensor, 255.0);
+            
+            // 添加批次维度 [1, height, width, channels]
+            const batched = tf.expandDims(normalized, 0);
+            
+            // 清理中间张量
+            tf.dispose([tensor, normalized]);
+            
+            resolve(batched);
+          } catch (error) {
+            reject(error);
+          }
+        };
+        img.onerror = () => reject(new Error('图片加载失败'));
+        img.src = e.target?.result as string;
+      } catch (error) {
+        reject(error);
+      }
+    };
+    reader.onerror = () => reject(new Error('文件读取失败'));
+    reader.readAsDataURL(imageFile);
+  });
+}
+
+/**
+ * 处理模型预测结果，转换为数独板
+ * @param predictions 模型预测结果
+ * @param tf TensorFlow.js 实例
+ * @returns 9x9 数独板
+ */
+async function processPredictions(predictions: any, tf: any): Promise<number[][]> {
+  // 获取预测数据的形状
+  const shape = predictions.shape;
+  console.log('📊 预测结果形状:', shape);
+  
+  // 将预测结果转换为数组
+  const predictionsArray = await predictions.array();
+  
+  // 初始化数独板
+  const board: number[][] = Array(9).fill(null).map(() => Array(9).fill(0));
+  
+  if (shape.length === 3 && shape[0] === 1 && shape[1] === 9 && shape[2] === 9) {
+    // 如果输出是 [1, 9, 9] 形状，直接使用
+    const pred = predictionsArray[0] as number[][];
+    for (let row = 0; row < 9; row++) {
+      for (let col = 0; col < 9; col++) {
+        // 将概率转换为数字 (0-9)
+        const prob = pred[row][col];
+        if (prob > 0.5) { // 阈值可调整
+          board[row][col] = Math.round(prob);
+        }
+      }
+    }
+  } else if (shape.length === 2 && shape[0] === 81 && shape[1] === 10) {
+    // 如果输出是 [81, 10] 形状 (每个格子的10个数字概率)
+    for (let i = 0; i < 81; i++) {
+      const row = Math.floor(i / 9);
+      const col = i % 9;
+      const probs = predictionsArray[i] as number[];
+      
+      // 找到概率最高的数字
+      let maxProb = 0;
+      let maxDigit = 0;
+      for (let digit = 0; digit < 10; digit++) {
+        if (probs[digit] > maxProb) {
+          maxProb = probs[digit];
+          maxDigit = digit;
+        }
+      }
+      
+      // 只填入非零数字
+      if (maxDigit > 0 && maxProb > 0.3) { // 置信度阈值
+        board[row][col] = maxDigit;
+      }
+    }
+  } else {
+    // 其他形状，尝试智能解析
+    console.log('⚠️ 未知的预测结果形状，尝试智能解析...');
+    
+    // 将预测结果展平并重塑为 9x9
+    const flattened = predictions.flatten();
+    const reshaped = tf.reshape(flattened, [9, 9]);
+    const reshapedArray = await reshaped.array();
+    
+    for (let row = 0; row < 9; row++) {
+      for (let col = 0; col < 9; col++) {
+        const value = reshapedArray[row][col];
+        if (typeof value === 'number' && value > 0.5) {
+          board[row][col] = Math.round(value);
+        }
+      }
+    }
+    
+    // 清理临时张量
+    tf.dispose([flattened, reshaped]);
+  }
+  
+  console.log('📋 处理后的数独板:', board);
+  return board;
 }
 
 /**

@@ -569,12 +569,6 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
                 📁 导入
               </button>
               <button 
-                className="import-button"
-                onClick={() => setIsTestDialogOpen(true)}
-              >
-                🧪 测试
-              </button>
-              <button 
                 className="finish-creation-button"
                 onClick={handleFinishCreation}
               >
@@ -582,7 +576,18 @@ const SudokuGame: React.FC<SudokuGameProps> = ({
               </button>
             </div>
           ) : (
-            <Timer isActive={isGameActive} onTimeUpdate={handleTimeUpdate} />
+            <div className="manual-mode-running">
+              <Timer isActive={isGameActive} onTimeUpdate={handleTimeUpdate} />
+              <button 
+                className="import-button"
+                onClick={() => {
+                  setIsGameActive(false);
+                  setIsTestDialogOpen(true);
+                }}
+              >
+                🧪 测试
+              </button>
+            </div>
           )
         ) : (
           <Timer isActive={isGameActive} onTimeUpdate={handleTimeUpdate} />

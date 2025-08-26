@@ -12,6 +12,8 @@ const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onImport }
   const [fileType, setFileType] = useState<'json' | 'image'>('json');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [recognitionMethod, setRecognitionMethod] = useState<'transformer' | 'ocr'>('transformer');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
@@ -22,6 +24,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onImport }
 
     setIsLoading(true);
     setError('');
+    setImagePreview('');
 
     try {
       if (fileType === 'json') {
@@ -78,15 +81,24 @@ const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onImport }
 
   const handleImageFile = async (file: File): Promise<void> => {
     try {
+      // 显示图片预览
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+
       console.log('🖼️ 开始图片识别...');
+      console.log(`🔧 识别方法: ${recognitionMethod === 'transformer' ? 'Transformer模型' : 'OCR识别'}`);
       
-      // 优先使用OCR识别（对标准网格识别效果更好）
-      let result: RecognitionResult = await quickRecognizeOCR(file);
+      let result: RecognitionResult;
       
-      // 如果OCR失败，则回退到原有的几何管道识别
-      if (!result.success) {
-        console.warn('OCR识别失败，尝试回退到几何识别');
+      if (recognitionMethod === 'transformer') {
+        // 使用Transformer模型识别
         result = await quickRecognize(file);
+      } else {
+        // 使用OCR识别
+        result = await quickRecognizeOCR(file);
       }
 
       if (result.success && result.board) {
@@ -126,6 +138,11 @@ const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onImport }
     fileInputRef.current?.click();
   };
 
+  const clearImagePreview = () => {
+    setImagePreview('');
+    setError('');
+  };
+
   return (
     <div className="import-dialog-overlay" onClick={onClose}>
       <div className="import-dialog" onClick={(e) => e.stopPropagation()}>
@@ -141,33 +158,78 @@ const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onImport }
                 type="radio"
                 value="json"
                 checked={fileType === 'json'}
-                onChange={(e) => setFileType(e.target.value as 'json' | 'image')}
+                onChange={(e) => {
+                  setFileType(e.target.value as 'json' | 'image');
+                  clearImagePreview();
+                }}
               />
               JSON文件
             </label>
-            {/* <label>
+            <label>
               <input
                 type="radio"
                 value="image"
                 checked={fileType === 'image'}
-                onChange={(e) => setFileType(e.target.value as 'json' | 'image')}
+                onChange={(e) => {
+                  setFileType(e.target.value as 'json' | 'image');
+                  clearImagePreview();
+                }}
               />
               图片文件
-            </label> */}
+            </label>
           </div>
+
+          {fileType === 'image' && (
+            <div className="recognition-method-selector">
+              <label>
+                <input
+                  type="radio"
+                  value="transformer"
+                  checked={recognitionMethod === 'transformer'}
+                  onChange={(e) => setRecognitionMethod(e.target.value as 'transformer' | 'ocr')}
+                />
+                🧠 Transformer模型 (推荐)
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  value="ocr"
+                  checked={recognitionMethod === 'ocr'}
+                  onChange={(e) => setRecognitionMethod(e.target.value as 'transformer' | 'ocr')}
+                />
+                📝 OCR识别
+              </label>
+            </div>
+          )}
 
           <div className="file-upload-area"
                onDrop={handleDrop}
                onDragOver={handleDragOver}
                onClick={triggerFileInput}>
-            <div className="upload-icon">📁</div>
-            <p>点击选择文件或拖拽文件到此处</p>
-            <p className="file-format-hint">
-              {fileType === 'json' 
-                ? '支持JSON格式：{data: [9×9数组]}'
-                : '支持JPG、PNG等图片格式'
-              }
-            </p>
+            {imagePreview ? (
+              <div className="image-preview-container">
+                <img src={imagePreview} alt="数独图片预览" className="image-preview" />
+                <div className="image-preview-overlay">
+                  <button className="change-image-btn" onClick={(e) => {
+                    e.stopPropagation();
+                    clearImagePreview();
+                  }}>
+                    🔄 更换图片
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="upload-icon">📁</div>
+                <p>点击选择文件或拖拽文件到此处</p>
+                <p className="file-format-hint">
+                  {fileType === 'json' 
+                    ? '支持JSON格式：{data: [9×9数组]}'
+                    : '支持JPG、PNG等图片格式'
+                  }
+                </p>
+              </>
+            )}
             <input
               ref={fileInputRef}
               type="file"
@@ -183,9 +245,17 @@ const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onImport }
               <p>
                 {fileType === 'json' 
                   ? '正在解析JSON文件...'
-                  : '正在识别图片中的数独...'
+                  : `正在使用${recognitionMethod === 'transformer' ? 'Transformer模型' : 'OCR'}识别图片中的数独...`
                 }
               </p>
+              {fileType === 'image' && (
+                <div className="recognition-progress">
+                  <div className="progress-bar">
+                    <div className="progress-fill"></div>
+                  </div>
+                  <p className="progress-text">识别中，请稍候...</p>
+                </div>
+              )}
             </div>
           )}
 
@@ -209,9 +279,9 @@ const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onImport }
                 <>
                   <li>支持JPG、PNG、GIF等常见图片格式</li>
                   <li>图片应包含清晰的数独网格</li>
-                  <li>系统将自动识别数字并转换为数独数据</li>
-                  <li>建议使用高分辨率、对比度高的图片</li>
-                  <li>识别准确率取决于图片质量和清晰度</li>
+                  <li><strong>🧠 Transformer模型</strong>：使用深度学习模型，识别准确率更高</li>
+                  <li><strong>📝 OCR识别</strong>：使用传统OCR技术，适用于标准网格</li>
+                  <li>建议使用高分辨率、对比度高的图片以获得最佳识别效果</li>
                 </>
               )}
             </ul>

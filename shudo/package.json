@@ -4,13 +4,15 @@
   "description": "一个功能完整的数独游戏应用",
   "private": true,
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "typescript": "^4.9.5",
+    "@tensorflow/tfjs": "^4.22.0",
+    "@tensorflow/tfjs-converter": "^4.22.0",
+    "@types/node": "^16.18.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
-    "@types/node": "^16.18.0",
-    "tesseract.js": "^4.1.1"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tesseract.js": "^4.1.1",
+    "typescript": "^4.9.5"
   },
   "scripts": {
     "start": "react-scripts start",
