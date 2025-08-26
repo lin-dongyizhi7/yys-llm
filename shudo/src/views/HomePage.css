@@ -158,3 +158,273 @@
   background: #e0e0e0;
   transform: translateX(-3px);
 }
+
+/* 批量生成样式 */
+.batch-generation {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.batch-generation h2 {
+  font-size: 1.5rem;
+  color: #666;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.config-section {
+  background: #f8f9fa;
+  border-radius: 15px;
+  padding: 25px;
+  margin-bottom: 25px;
+  border: 2px solid #e9ecef;
+}
+
+.config-section h3 {
+  font-size: 1.2rem;
+  color: #333;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.config-input {
+  width: 120px;
+  padding: 10px 15px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  margin-right: 15px;
+}
+
+.config-input:focus {
+  outline: none;
+  border-color: #2196F3;
+  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+}
+
+.config-hint {
+  color: #666;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.difficulty-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.difficulty-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.difficulty-checkbox:hover {
+  background: #e9ecef;
+}
+
+.difficulty-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.checkbox-label {
+  font-size: 1rem;
+  color: #333;
+  cursor: pointer;
+}
+
+.image-config {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.config-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.config-row label {
+  min-width: 120px;
+  font-weight: 500;
+  color: #333;
+}
+
+.config-select {
+  padding: 8px 12px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: white;
+}
+
+.config-select:focus {
+  outline: none;
+  border-color: #2196F3;
+}
+
+.config-color {
+  width: 50px;
+  height: 40px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  background: white;
+}
+
+.config-color::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.config-color::-webkit-color-swatch {
+  border: none;
+  border-radius: 4px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin: 30px 0;
+}
+
+.generate-button {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 180px;
+}
+
+.generate-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(76, 175, 80, 0.3);
+}
+
+.generate-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.generation-progress {
+  text-align: center;
+  margin: 20px 0;
+  padding: 15px;
+  background: #e3f2fd;
+  border-radius: 10px;
+  border-left: 4px solid #2196F3;
+}
+
+.generation-progress p {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #1976d2;
+  font-weight: 500;
+}
+
+.generation-result {
+  background: #f8f9fa;
+  border-radius: 15px;
+  padding: 25px;
+  margin-top: 25px;
+  border: 2px solid #e9ecef;
+}
+
+.generation-result h3 {
+  font-size: 1.3rem;
+  color: #333;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.result-message {
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.result-message.success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.result-message.error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.result-details {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #dee2e6;
+}
+
+.result-details p {
+  margin: 8px 0;
+  color: #495057;
+  font-size: 0.95rem;
+}
+
+.result-errors {
+  background: #fff5f5;
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #fed7d7;
+  margin-top: 20px;
+}
+
+.result-errors h4 {
+  color: #c53030;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.result-errors ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.result-errors li {
+  color: #c53030;
+  margin: 5px 0;
+  font-size: 0.9rem;
+}
+
+/* 批量生成按钮样式 */
+.mode-button.batch {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+  color: white;
+  border: none;
+}
+
+.mode-button.batch:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(255, 107, 107, 0.3);
+}
+
+.mode-button.batch h3,
+.mode-button.batch p {
+  color: white;
+}

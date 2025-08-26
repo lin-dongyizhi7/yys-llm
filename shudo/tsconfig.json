@@ -22,5 +22,5 @@
   },
   "include": [
     "src"
-, "src/test/features-test.ts"  ]
+, "src/test/features-test.test.ts"  ]
 }
