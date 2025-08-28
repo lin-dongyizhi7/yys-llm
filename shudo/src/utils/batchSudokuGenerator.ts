@@ -130,7 +130,8 @@ export class BatchSudokuGenerator {
     
     for (let i = 0; i < sudokus.length; i++) {
       const sudoku = sudokus[i];
-      const filename = `${timestamp}-${sudoku.difficulty.name}-${i + 1}.json`;
+      const difficultySuffix = this.getDifficultySuffix(sudoku.difficulty.name);
+      const filename = `${timestamp}-${difficultySuffix}-${i + 1}.json`;
       const filepath = `${outputDir}/${filename}`;
       
       const jsonData = {
@@ -169,7 +170,8 @@ export class BatchSudokuGenerator {
     
     for (let i = 0; i < sudokus.length; i++) {
       const sudoku = sudokus[i];
-      const filename = `${timestamp}-${sudoku.difficulty.name}-${i + 1}.png`;
+      const difficultySuffix = this.getDifficultySuffix(sudoku.difficulty.name);
+      const filename = `${timestamp}-${difficultySuffix}-${i + 1}.png`;
       const filepath = `${outputDir}/${filename}`;
       
       try {
@@ -277,9 +279,9 @@ image/         - PNG 图片文件 (${imageFiles.length} 个)
 ------------
 所有文件使用统一的时间戳和索引，确保 JSON 和图片文件名完全对应。
 
-例如:
-- json/2024-01-15T10-30-45-简单-1.json
-- image/2024-01-15T10-30-45-简单-1.png
+ 例如:
+ - json/2024-01-15T10-30-45-easy-1.json
+ - image/2024-01-15T10-30-45-easy-1.png
 
 这两个文件包含同一个数独的数据和图片。
 
@@ -429,6 +431,23 @@ JSON 文件格式:
         resolve(blob!);
       }, 'image/png');
     });
+  }
+
+  /**
+   * 获取难度英文后缀
+   * @param difficultyName 难度名称
+   * @returns 英文后缀
+   */
+  private static getDifficultySuffix(difficultyName: string): string {
+    const difficultyMap: { [key: string]: string } = {
+      '简单': 'easy',
+      '中等': 'medium',
+      '困难': 'hard',
+      '专家': 'expert',
+      '大师': 'master'
+    };
+    
+    return difficultyMap[difficultyName] || difficultyName.toLowerCase();
   }
 
   /**

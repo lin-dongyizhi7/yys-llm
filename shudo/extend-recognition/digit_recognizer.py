@@ -21,39 +21,43 @@ class DigitCNN(nn.Module):
     def __init__(self, num_classes: int = 10):
         super(DigitCNN, self).__init__()
         
-        # 第一个卷积块
-        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1)
-        self.bn1 = nn.BatchNorm2d(32)
-        self.pool1 = nn.MaxPool2d(2, 2)
+        # 简化的CNN架构，避免尺寸计算问题
+        self.features = nn.Sequential(
+            # 第一个卷积块: 28x28 -> 14x14
+            nn.Conv2d(1, 32, kernel_size=3, padding=1),
+            nn.BatchNorm2d(32),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2, 2),
+            
+            # 第二个卷积块: 14x14 -> 7x7
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2, 2),
+            
+            # 第三个卷积块: 7x7 -> 7x7 (保持尺寸)
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(inplace=True),
+        )
         
-        # 第二个卷积块
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
-        self.bn2 = nn.BatchNorm2d(64)
-        self.pool2 = nn.MaxPool2d(2, 2)
-        
-        # 第三个卷积块
-        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
-        self.bn3 = nn.BatchNorm2d(128)
-        self.pool3 = nn.MaxPool2d(2, 2)
-        
-        # 全连接层
-        self.fc1 = nn.Linear(128 * 5 * 5, 512)
-        self.dropout = nn.Dropout(0.5)
-        self.fc2 = nn.Linear(512, num_classes)
+        # 全连接层: 7x7x128 = 6272
+        self.classifier = nn.Sequential(
+            nn.Linear(128 * 7 * 7, 256),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.5),
+            nn.Linear(256, num_classes)
+        )
         
     def forward(self, x):
-        # 卷积层
-        x = self.pool1(F.relu(self.bn1(self.conv1(x))))
-        x = self.pool2(F.relu(self.bn2(self.conv2(x))))
-        x = self.pool3(F.relu(self.bn3(self.conv3(x))))
+        # 特征提取
+        x = self.features(x)
         
-        # 展平
-        x = x.view(-1, 128 * 5 * 5)
+        # 展平: 128 * 7 * 7 = 6272
+        x = x.view(x.size(0), -1)
         
-        # 全连接层
-        x = F.relu(self.fc1(x))
-        x = self.dropout(x)
-        x = self.fc2(x)
+        # 分类
+        x = self.classifier(x)
         
         return x
 

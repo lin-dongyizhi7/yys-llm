@@ -5,6 +5,7 @@
 
 export interface SudokuDifficulty {
   name: string;
+  en: string;
   cellsToRemove: number;
   description: string;
 }
@@ -21,10 +22,10 @@ export class SudokuGenerator {
   
   // 预定义的难度级别
   public static readonly DIFFICULTIES: SudokuDifficulty[] = [
-    { name: '简单', cellsToRemove: 30, description: '适合初学者，有较多提示数字' },
-    { name: '中等', cellsToRemove: 40, description: '平衡的挑战性，适中的提示数量' },
-    { name: '困难', cellsToRemove: 50, description: '较高挑战性，较少的提示数字' },
-    { name: '专家', cellsToRemove: 60, description: '极高挑战性，最少的提示数字' }
+    { name: '简单', en: 'simple', cellsToRemove: 30, description: '适合初学者，有较多提示数字' },
+    { name: '中等', en: 'medium', cellsToRemove: 40, description: '平衡的挑战性，适中的提示数量' },
+    { name: '困难', en: 'difficult', cellsToRemove: 50, description: '较高挑战性，较少的提示数字' },
+    { name: '专家', en: 'expert', cellsToRemove: 60, description: '极高挑战性，最少的提示数字' }
   ];
 
   /**
