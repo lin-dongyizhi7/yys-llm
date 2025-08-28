@@ -16,7 +16,8 @@ import cv2
 import json
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-from digit_recognizer import DigitRecognizer, SudokuDataset
+from digit_recognizer import DigitRecognizer
+from sudoku_dataset import SudokuCellDataset
 
 
 def train_mnist(model, device, epochs=10, batch_size=64, learning_rate=0.001, 
@@ -161,7 +162,7 @@ def train_sudoku(model, device, image_dir, json_dir, epochs=20, batch_size=16,
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     
     # 创建数据集
-    dataset = SudokuDataset(image_dir, json_dir)
+    dataset = SudokuCellDataset(image_dir, json_dir, cell_size=28, augment=True)
     
     # 分割训练集和验证集
     train_size = int(0.8 * len(dataset))

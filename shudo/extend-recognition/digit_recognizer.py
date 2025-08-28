@@ -63,20 +63,22 @@ class DigitCNN(nn.Module):
 
 
 class SudokuDataset(Dataset):
-    """数独数据集类"""
+    """数独数据集类 - 修复版本"""
     
-    def __init__(self, image_dir: str, json_dir: str, transform=None):
+    def __init__(self, image_dir: str, json_dir: str, transform=None, cell_size: int = 28):
         """
         初始化数据集
         
         Args:
             image_dir: 图像目录路径
-            json_dir: JSON标注文件目录路径
+            json_dir: JSON标注文件路径
             transform: 图像变换
+            cell_size: 单元格大小
         """
         self.image_dir = image_dir
         self.json_dir = json_dir
         self.transform = transform
+        self.cell_size = cell_size
         
         # 获取所有图像文件
         self.image_files = [f for f in os.listdir(image_dir) if f.endswith('.png')]
@@ -85,50 +87,68 @@ class SudokuDataset(Dataset):
         if transform is None:
             self.transform = transforms.Compose([
                 transforms.ToPILImage(),
-                transforms.Resize((28, 28)),
+                transforms.Resize((cell_size, cell_size)),
                 transforms.ToTensor(),
                 transforms.Normalize((0.1307,), (0.3081,))  # MNIST标准化
             ])
+        
+        # 预加载所有数据
+        self.data_pairs = []
+        self._load_all_data()
+    
+    def _load_all_data(self):
+        """预加载所有数据"""
+        print("正在加载数独数据集...")
+        
+        for img_name in self.image_files:
+            img_path = os.path.join(self.image_dir, img_name)
+            json_name = img_name.replace('.png', '.json')
+            json_path = os.path.join(self.json_dir, json_name)
+            
+            if not os.path.exists(json_path):
+                continue
+            
+            try:
+                # 读取图像
+                image = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+                if image is None:
+                    continue
+                
+                # 读取JSON数据
+                with open(json_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                
+                sudoku_data = data['data']
+                
+                # 为每个非零数字创建训练样本
+                for i in range(9):
+                    for j in range(9):
+                        digit = sudoku_data[i][j]
+                        if digit != 0:  # 只处理有数字的单元格
+                            # 提取单元格图像 (这里需要实际的单元格分割逻辑)
+                            # 暂时使用整个图像作为占位符
+                            self.data_pairs.append((image, digit))
+                
+            except Exception as e:
+                print(f"加载数据时出错 {img_name}: {e}")
+                continue
+        
+        print(f"成功加载 {len(self.data_pairs)} 个训练样本")
     
     def __len__(self):
-        return len(self.image_files)
+        return len(self.data_pairs)
     
     def __getitem__(self, idx):
-        # 读取图像
-        img_name = self.image_files[idx]
-        img_path = os.path.join(self.image_dir, img_name)
+        if idx >= len(self.data_pairs):
+            return torch.zeros(1, self.cell_size, self.cell_size), torch.tensor(0)
         
-        # 读取对应的JSON文件
-        json_name = img_name.replace('.png', '.json')
-        json_path = os.path.join(self.json_dir, json_name)
-        
-        if not os.path.exists(json_path):
-            # 如果没有对应的JSON文件，返回空标签
-            return torch.zeros(1, 28, 28), torch.tensor(0)
-        
-        # 读取JSON数据
-        with open(json_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        
-        # 获取数独数据
-        sudoku_data = data['data']
-        
-        # 创建标签张量 (9x9)
-        labels = torch.zeros(9, 9, dtype=torch.long)
-        for i in range(9):
-            for j in range(9):
-                labels[i, j] = sudoku_data[i][j]
-        
-        # 读取图像
-        image = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-        if image is None:
-            image = np.zeros((28, 28), dtype=np.uint8)
+        image, digit = self.data_pairs[idx]
         
         # 应用变换
         if self.transform:
             image = self.transform(image)
         
-        return image, labels
+        return image, torch.tensor(digit, dtype=torch.long)
 
 
 class DigitRecognizer:
