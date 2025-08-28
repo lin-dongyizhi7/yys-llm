@@ -119,7 +119,7 @@ export function useBatchGenerator() {
         success: false,
         message: `生成失败: ${error}`,
         generatedFiles: [],
-        errors: [error.toString()]
+        errors: [(error as Error).message]
       };
     }
   };

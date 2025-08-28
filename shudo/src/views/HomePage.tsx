@@ -273,8 +273,43 @@ const HomePage: React.FC<HomePageProps> = ({ onModeSelect }) => {
               {generationResult.success && (
                 <div className="result-details">
                   <p>📁 生成文件数: {generationResult.generatedFiles.length}</p>
-                  <p>💾 文件已下载到浏览器默认下载目录</p>
-                  <p>📂 建议将文件移动到 shudo/data/ 目录下</p>
+                  <p>📦 压缩包: {generationResult.zipFilename}</p>
+                  <p>💾 所有文件已打包为压缩包</p>
+                  <p>📂 建议将压缩包解压到 shudo/data/ 目录下</p>
+                  
+                  <div className="file-correspondence">
+                    <h4>📋 文件对应关系</h4>
+                    <p>✅ JSON 和图片文件名完全对应，便于使用：</p>
+                    <ul>
+                      <li><code>2024-01-15T10-30-45-简单-1.json</code> ↔ <code>2024-01-15T10-30-45-简单-1.png</code></li>
+                      <li><code>2024-01-15T10-30-45-中等-2.json</code> ↔ <code>2024-01-15T10-30-45-中等-2.png</code></li>
+                      <li>... 更多对应文件</li>
+                    </ul>
+                    <p>🔍 压缩包内包含清晰的目录结构：</p>
+                    <ul>
+                      <li><code>json/</code> - 所有 JSON 数据文件</li>
+                      <li><code>image/</code> - 所有 PNG 图片文件</li>
+                      <li><code>README.txt</code> - 详细使用说明</li>
+                    </ul>
+                  </div>
+                  
+                  {generationResult.zipBlob && (
+                    <div className="download-section">
+                      <button
+                        className="download-zip-button"
+                        onClick={() => {
+                          if (generationResult.zipBlob && generationResult.zipFilename) {
+                            BatchSudokuGenerator.downloadZipFile(generationResult.zipBlob, generationResult.zipFilename);
+                          }
+                        }}
+                      >
+                        📥 下载压缩包
+                      </button>
+                      <p className="download-hint">
+                        点击下载包含所有 JSON 和图片文件的压缩包
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
               

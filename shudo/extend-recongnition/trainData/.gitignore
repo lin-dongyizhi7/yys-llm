@@ -1,0 +1,13 @@
+# 数独数据文件 - 不添加到 Git 追踪
+json/
+image/
+
+# 其他可能的数据文件
+*.json
+*.png
+*.jpg
+*.jpeg
+
+# 临时文件
+*.tmp
+*.temp
